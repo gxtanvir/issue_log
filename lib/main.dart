@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:issue_log/screens/auth/login.dart';
 import 'package:issue_log/screens/home/issue_add.dart';
+import 'package:issue_log/screens/home/issue_list.dart';
 import 'package:issue_log/theme/app_theme.dart';
 
 void main() {
@@ -16,7 +17,8 @@ class MyApp extends StatelessWidget {
       title: "Issue Log",
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme(context),
-      home: IssueAddScreen(),
+      home: LoginScreen(),
+      routes: {'/add': (_) => IssueAddScreen()},
     );
   }
 }
