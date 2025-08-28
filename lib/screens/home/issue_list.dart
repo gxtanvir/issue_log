@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:issue_log/services/api_service.dart';
 
 class IssueListScreen extends StatefulWidget {
   @override
@@ -11,9 +12,10 @@ class _IssueListScreenState extends State<IssueListScreen> {
   List<dynamic> issues = [];
   bool loading = true;
 
-  // NOTE: change baseUrl depending on environment:
-  // Android emulator: http://10.0.2.2:8000
-  // iOS simulator/desktop: http://localhost:8000
+  int totalCount = 0;
+  int pendingCount = 0;
+  int solvedCount = 0;
+
   final String baseUrl = "https://gxtanvir.pythonanywhere.com";
 
   @override
@@ -23,13 +25,48 @@ class _IssueListScreenState extends State<IssueListScreen> {
   }
 
   Future<void> fetchIssues() async {
+    setState(() => loading = true);
+
     try {
+      // 1️⃣ Get saved JWT token
+      final token = await ApiService.getToken();
+      if (token == null) {
+        debugPrint("No token found. User might need to login.");
+        setState(() => loading = false);
+        return;
+      }
+
+      // 2️⃣ Make GET request with Authorization header
       final uri = Uri.parse("$baseUrl/api/issues/");
-      final res = await http.get(uri);
+      final res = await http.get(
+        uri,
+        headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        },
+      );
 
       if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+
+        int total = data.length;
+        int pending = 0;
+        int solved = 0;
+
+        for (var issue in data) {
+          if (issue["gms_status"] == "Done" &&
+              issue["logic_status"] == "Done") {
+            solved++;
+          } else {
+            pending++;
+          }
+        }
+
         setState(() {
-          issues = jsonDecode(res.body);
+          issues = data;
+          totalCount = total;
+          pendingCount = pending;
+          solvedCount = solved;
           loading = false;
         });
       } else {
@@ -40,6 +77,64 @@ class _IssueListScreenState extends State<IssueListScreen> {
       debugPrint("Error: $e");
       setState(() => loading = false);
     }
+  }
+
+  Widget _buildStatusChip(String? gms, String? logic) {
+    String status = "Pending";
+    Color color = Colors.orange;
+
+    if (gms == "Done" && logic == "Done") {
+      status = "Completed";
+      color = Colors.green;
+    } else {
+      status = "Pending";
+      color = Colors.redAccent;
+    }
+
+    return Chip(
+      label: Text(
+        status,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      backgroundColor: color,
+    );
+  }
+
+  Widget _buildSummaryCard(String title, int count, Color color) {
+    return Expanded(
+      child: Card(
+        color: color,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+          child: Column(
+            children: [
+              Text(
+                count.toString(),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -56,11 +151,10 @@ class _IssueListScreenState extends State<IssueListScreen> {
         onPressed: () async {
           final result = await Navigator.pushNamed(context, '/add');
           if (result == true) {
-            fetchIssues(); // refresh list after adding
+            fetchIssues(); // refresh after adding
           }
         },
       ),
-
       body:
           loading
               ? const Center(child: CircularProgressIndicator())
@@ -69,43 +163,131 @@ class _IssueListScreenState extends State<IssueListScreen> {
                 child:
                     issues.isEmpty
                         ? const Center(child: Text("No issues found"))
-                        : ListView.builder(
-                          itemCount: issues.length,
-                          itemBuilder: (context, index) {
-                            final issue = issues[index];
-                            return Card(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              child: ListTile(
-                                title: Text(
-                                  issue["issue_details"] ?? "No details",
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
+                        : Column(
+                          children: [
+                            // 🔹 Summary Panel
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: [
+                                  _buildSummaryCard(
+                                    "Total",
+                                    totalCount,
+                                    Colors.blue,
                                   ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text("Company: ${issue["company_name"]}"),
-                                    Text(
-                                      "Raised by: ${issue["raised_by"] ?? "N/A"}",
-                                    ),
-                                    Text(
-                                      "Priority: ${issue["priority"] ?? "-"}",
-                                    ),
-                                    Text(
-                                      "Status: GMS=${issue["gms_status"]}, Logic=${issue["logic_status"]}",
-                                    ),
-                                    Text(
-                                      "Raised on: ${issue["issue_raise_date"]}",
-                                    ),
-                                  ],
-                                ),
+                                  const SizedBox(width: 8),
+                                  _buildSummaryCard(
+                                    "Pending",
+                                    pendingCount,
+                                    Colors.redAccent,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildSummaryCard(
+                                    "Solved",
+                                    solvedCount,
+                                    Colors.green,
+                                  ),
+                                ],
                               ),
-                            );
-                          },
+                            ),
+                            const Divider(height: 1),
+
+                            // 🔹 Issue List
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: issues.length,
+                                itemBuilder: (context, index) {
+                                  final issue = issues[index];
+                                  return Card(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    elevation: 4,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(16),
+                                      onTap: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/details',
+                                          arguments: issue,
+                                        );
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Top Row -> Company + Date
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  issue["company_name"] ??
+                                                      "Unknown Company",
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Color(0xFF384B70),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  issue["issue_raise_date"] ??
+                                                      "",
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+
+                                            // Raised By
+                                            Text(
+                                              "Inserted By: ${issue["raised_by"] ?? "N/A"}",
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+
+                                            // Issue details preview
+                                            Text(
+                                              issue["issue_details"] ??
+                                                  "No details",
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey[800],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 10),
+
+                                            // Status chip
+                                            Align(
+                                              alignment: Alignment.centerRight,
+                                              child: _buildStatusChip(
+                                                issue["gms_status"],
+                                                issue["logic_status"],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                         ),
               ),
     );

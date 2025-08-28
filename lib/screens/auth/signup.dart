@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login.dart';
+import 'package:issue_log/services/api_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -17,17 +18,32 @@ class _SignupScreenState extends State<SignupScreen> {
 
   // Submit Method
 
-  void _submit() {
-    var isValid = _formKey.currentState!.validate();
+void _submit() async {
+  if (!_formKey.currentState!.validate()) return;
+  _formKey.currentState!.save();
 
-    if (!isValid) {
-      return;
-    }
-    _formKey.currentState!.save();
-    print(_userName);
-    print(_enteredId);
-    print(_enteredPassword);
+  setState(() => _isAuthenticating = true);
+
+  bool success = await ApiService.signup(_userName, _enteredId, _enteredPassword);
+
+  setState(() => _isAuthenticating = false);
+
+  if (success) {
+    // After successful signup, go to login screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Registration successful! Please login.")),
+    );
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (ctx) => const LoginScreen()),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Registration failed! Try again.")),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -156,10 +172,13 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
                 SizedBox(height: constraints.maxHeight * 0.03),
-                ElevatedButton(
-                  onPressed: _submit,
-                  child: const Text('Sign Up'),
-                ),
+                if (_isAuthenticating)
+                  const Center(child: CircularProgressIndicator()),
+                if (!_isAuthenticating)
+                  ElevatedButton(
+                    onPressed: _submit,
+                    child: const Text('Sign Up'),
+                  ),
                 SizedBox(height: constraints.maxHeight * 0.08),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

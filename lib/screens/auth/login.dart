@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:issue_log/screens/auth/signup.dart';
 import 'package:issue_log/screens/home/issue_add.dart';
 import 'package:issue_log/screens/home/issue_list.dart';
+import 'package:issue_log/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,16 +18,28 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isAuthenticating = false;
 
   // Submit Method
-  void _submit() {
-    bool isValid = _formKey.currentState!.validate();
+ void _submit() async {
+  if (!_formKey.currentState!.validate()) return;
+  _formKey.currentState!.save();
 
-    if (!isValid) {
-      return;
-    }
-    _formKey.currentState!.save();
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (ctx) => IssueListScreen()));
+  setState(() => _isAuthenticating = true);
+
+  bool success = await ApiService.login(_userId, _password);
+
+  setState(() => _isAuthenticating = false);
+
+  if (success) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (ctx) =>  IssueListScreen()),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Login failed")),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               value.trim().length <= 6) {
                             return null;
                           }
-                          return "Enter a valid number";
+                          return "Enter a valid id";
                         },
                         onSaved: (newValue) => _userId = newValue!,
                       ),
@@ -113,9 +126,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         obscureText: true,
                         validator: (value) {
+              
                           if (value != null &&
                               value.trim().isNotEmpty &&
-                              value.trim().length > 6) {
+                              value.trim().length >= 6) {
                             return null;
                           }
                           return "Passwordd should be 6 characteer long";
@@ -145,10 +159,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 SizedBox(height: constraints.maxHeight * 0.03),
-                ElevatedButton(
-                  onPressed: _submit,
-                  child: const Text('Login'),
-                ),
+                if (_isAuthenticating)
+                  const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                if (!_isAuthenticating)
+                  ElevatedButton(
+                    onPressed: _submit,
+                    child: const Text('Login'),
+                  ),
                 SizedBox(height: constraints.maxHeight * 0.08),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
