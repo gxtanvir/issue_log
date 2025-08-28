@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:issue_log/services/api_service.dart';
+import 'package:issue_log/screens/auth/login.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:issue_log/screens/home/issue_details.dart';
 
 class IssueListScreen extends StatefulWidget {
   @override
@@ -16,7 +19,7 @@ class _IssueListScreenState extends State<IssueListScreen> {
   int pendingCount = 0;
   int solvedCount = 0;
 
-  final String baseUrl = "https://gxtanvir.pythonanywhere.com";
+  final String baseUrl = "http://127.0.0.1:8000";
 
   @override
   void initState() {
@@ -24,11 +27,22 @@ class _IssueListScreenState extends State<IssueListScreen> {
     fetchIssues();
   }
 
+  // ---- Logout function ----
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove("token"); // clear saved token
+
+    // Navigate back to Login screen
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+      (route) => false,
+    );
+  }
+
   Future<void> fetchIssues() async {
     setState(() => loading = true);
-
     try {
-      // 1️⃣ Get saved JWT token
       final token = await ApiService.getToken();
       if (token == null) {
         debugPrint("No token found. User might need to login.");
@@ -36,7 +50,6 @@ class _IssueListScreenState extends State<IssueListScreen> {
         return;
       }
 
-      // 2️⃣ Make GET request with Authorization header
       final uri = Uri.parse("$baseUrl/api/issues/");
       final res = await http.get(
         uri,
@@ -137,6 +150,11 @@ class _IssueListScreenState extends State<IssueListScreen> {
     );
   }
 
+  String _shortTitle(String? text) {
+    if (text == null) return "";
+    return text.length > 40 ? text.substring(0, 40) + "..." : text;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -144,15 +162,20 @@ class _IssueListScreenState extends State<IssueListScreen> {
         title: const Text("Pending Issues"),
         backgroundColor: const Color.fromARGB(255, 56, 75, 112),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.white),
+            tooltip: "Logout",
+            onPressed: _logout,
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color.fromARGB(255, 56, 75, 112),
         child: const Icon(Icons.add, color: Colors.white),
         onPressed: () async {
           final result = await Navigator.pushNamed(context, '/add');
-          if (result == true) {
-            fetchIssues(); // refresh after adding
-          }
+          if (result == true) fetchIssues();
         },
       ),
       body:
@@ -165,7 +188,7 @@ class _IssueListScreenState extends State<IssueListScreen> {
                         ? const Center(child: Text("No issues found"))
                         : Column(
                           children: [
-                            // 🔹 Summary Panel
+                            // Summary Panel
                             Padding(
                               padding: const EdgeInsets.all(12),
                               child: Row(
@@ -192,7 +215,7 @@ class _IssueListScreenState extends State<IssueListScreen> {
                             ),
                             const Divider(height: 1),
 
-                            // 🔹 Issue List
+                            // Issue List
                             Expanded(
                               child: ListView.builder(
                                 itemCount: issues.length,
@@ -210,10 +233,14 @@ class _IssueListScreenState extends State<IssueListScreen> {
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(16),
                                       onTap: () {
-                                        Navigator.pushNamed(
+                                        Navigator.push(
                                           context,
-                                          '/details',
-                                          arguments: issue,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => IssueDetailsScreen(
+                                                  issue: issue,
+                                                ),
+                                          ),
                                         );
                                       },
                                       child: Padding(
@@ -222,52 +249,46 @@ class _IssueListScreenState extends State<IssueListScreen> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            // Top Row -> Company + Date
+                                            // Issue title (first 40 chars)
+                                            Text(
+                                              _shortTitle(
+                                                issue["issue_details"],
+                                              ),
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF384B70),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+
+                                            // Raised By + Dates
                                             Row(
                                               mainAxisAlignment:
                                                   MainAxisAlignment
                                                       .spaceBetween,
                                               children: [
                                                 Text(
-                                                  issue["company_name"] ??
-                                                      "Unknown Company",
+                                                  "Raised By: ${issue["raised_by"] ?? "N/A"}",
                                                   style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Color(0xFF384B70),
+                                                    fontSize: 14,
                                                   ),
                                                 ),
                                                 Text(
-                                                  issue["issue_raise_date"] ??
-                                                      "",
-                                                  style: TextStyle(
+                                                  "Raised: ${issue["issue_raise_date"] ?? "-"}",
+                                                  style: const TextStyle(
                                                     fontSize: 13,
-                                                    color: Colors.grey[600],
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  "Deadline: ${issue["deadline"] ?? "-"}",
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey,
                                                   ),
                                                 ),
                                               ],
-                                            ),
-                                            const SizedBox(height: 8),
-
-                                            // Raised By
-                                            Text(
-                                              "Inserted By: ${issue["raised_by"] ?? "N/A"}",
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 6),
-
-                                            // Issue details preview
-                                            Text(
-                                              issue["issue_details"] ??
-                                                  "No details",
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey[800],
-                                              ),
                                             ),
                                             const SizedBox(height: 10),
 
