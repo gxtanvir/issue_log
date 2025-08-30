@@ -29,7 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) =>  IssueListScreen()),
+        MaterialPageRoute(builder: (_) => IssueListScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -58,13 +58,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 40),
                     Text(
                       'Login',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall!
-                          .copyWith(
-                            color: const Color.fromARGB(255, 56, 75, 112),
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineSmall!.copyWith(
+                        color: const Color.fromARGB(255, 56, 75, 112),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 40),
                   ],
@@ -75,38 +74,46 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('User ID',
-                        style: TextStyle(
-                            color: Color.fromARGB(255, 56, 75, 112),
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
+                    const Text(
+                      'User ID',
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 56, 75, 112),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     TextFormField(
                       autocorrect: false,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         prefixIcon: const Icon(Icons.smartphone_outlined),
                         hintText: "Enter your id",
                       ),
                       validator: (value) {
-                        if (value != null &&
-                            value.trim().length == 6) return null;
-                        return "Enter a valid 6-digit ID";
+                        if (value != null && value.trim().length >= 4)
+                          return null;
+                        return "Enter a valid  ID";
                       },
-                      onSaved: (val) => _userId = val!.trim(),
+                      onSaved: (val) => _userId = val!.toUpperCase(),
                     ),
                     const SizedBox(height: 16),
-                    const Text('Password',
-                        style: TextStyle(
-                            color: Color.fromARGB(255, 56, 75, 112),
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Password',
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 56, 75, 112),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     TextFormField(
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         prefixIcon: const Icon(Icons.lock_outline),
                         hintText: "Enter your password",
                       ),
@@ -129,9 +136,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromARGB(255, 56, 75, 112),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 14),
+                      horizontal: 40,
+                      vertical: 14,
+                    ),
                   ),
                   child: const Text('Login', style: TextStyle(fontSize: 18)),
                 ),
@@ -139,9 +149,10 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Don't have account?",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+                  const Text(
+                    "Don't have account?",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                  ),
                   TextButton(
                     onPressed: () {
                       Navigator.push(
@@ -149,9 +160,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         MaterialPageRoute(builder: (_) => const SignupScreen()),
                       );
                     },
-                    child: const Text('Register',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      'Register',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),

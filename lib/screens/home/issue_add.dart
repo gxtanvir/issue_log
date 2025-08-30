@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
-import 'package:issue_log/services/api_service.dart'; 
+import 'package:issue_log/services/api_service.dart';
 
 class IssueAddScreen extends StatefulWidget {
   const IssueAddScreen({super.key});
@@ -200,7 +200,12 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
                   _buildDropdown(
                     "Company Name",
                     companyName,
-                    ["GMS Composite", "GMS Textile", "GMS Trims"],
+                    [
+                      "GMS Composite",
+                      "GMS Textile",
+                      "GMS Trims",
+                      "GMS Testing Laboratory",
+                    ],
                     (val) => setState(() => companyName = val),
                   ),
                 ],

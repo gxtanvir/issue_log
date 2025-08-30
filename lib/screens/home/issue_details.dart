@@ -1,23 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:issue_log/screens/home/issue_update.dart';
 
-class IssueDetailsScreen extends StatelessWidget {
-  final Map<String, dynamic> issue; // will receive issue data
+class IssueDetailsScreen extends StatefulWidget {
+  final Map<String, dynamic> issue;
 
-  const IssueDetailsScreen({Key? key, required this.issue}) : super(key: key);
+  const IssueDetailsScreen({super.key, required this.issue});
 
-  Widget _buildDetailRow(String title, String? value) {
+  @override
+  State<IssueDetailsScreen> createState() => _IssueDetailsScreenState();
+}
+
+class _IssueDetailsScreenState extends State<IssueDetailsScreen> {
+  late Map<String, dynamic> issue;
+
+  @override
+  void initState() {
+    super.initState();
+    issue = widget.issue;
+  }
+
+  final dateFormatter = DateFormat("yyyy-MM-dd");
+
+  String fmtDate(dynamic d) {
+    if (d == null) return "-";
+    try {
+      return dateFormatter.format(DateTime.parse(d.toString()));
+    } catch (_) {
+      return d.toString();
+    }
+  }
+
+  Widget row(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "$title: ",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
           Expanded(
-            child: Text(value ?? "-", style: const TextStyle(color: Colors.black87)),
+            flex: 3,
+            child: Text(
+              "$label:",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
+          Expanded(flex: 5, child: Text(value)),
         ],
       ),
     );
@@ -27,31 +53,62 @@ class IssueDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Issue Details"),
+        title: const Text("Issue Details"),
+        backgroundColor: const Color.fromARGB(255, 56, 75, 112),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Card(
-          elevation: 3,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ListView(
-              children: [
-                _buildDetailRow("Issue ID", issue["issue_id"]?.toString()),
-                _buildDetailRow("Raised By", issue["raised_by"]),
-                _buildDetailRow("Responsible Party", issue["responsible_party"]),
-                _buildDetailRow("Responsible Person", issue["responsible_person"]),
-                _buildDetailRow("Module", issue["module"]),
-                _buildDetailRow("Deadline", issue["deadline"]),
-                _buildDetailRow("Complete Date", issue["complete_date"]),
-                _buildDetailRow("Comments", issue["comments"]),
-                _buildDetailRow("Comment Date", issue["comment_date"]),
-                _buildDetailRow("Inserted By", issue["inserted_by_name"]),
-                _buildDetailRow("Created At", issue["created_at"]),
-              ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            row("Issue Raise Date", fmtDate(issue['issue_raise_date'])),
+            row("Company Name", issue['company_name'] ?? "-"),
+            row("Priority", issue['priority'] ?? "-"),
+            row("Module", issue['module'] ?? "-"),
+            row("Raised By", issue['raised_by'] ?? "-"),
+            row("Via", issue['via'] ?? "-"),
+            row("Issue Details", issue['issue_details'] ?? "-"),
+            row("Responsible Party", issue['responsible_party'] ?? "-"),
+            row("Responsible Person", issue['responsible_person'] ?? "-"),
+            row("Deadline", fmtDate(issue['deadline'])),
+            row("Completed Date", fmtDate(issue['complete_date'])),
+            row("Comment", issue['comments'] ?? "-"),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              onPressed: () async {
+                final updatedIssue = await Navigator.of(
+                  context,
+                ).push<Map<String, dynamic>>(
+                  MaterialPageRoute(
+                    builder:
+                        (_) => IssueUpdateScreen(
+                          issue: issue,
+                          issueId: issue['issue_id'],
+                        ),
+                  ),
+                );
+
+                if (updatedIssue != null) {
+                  setState(() {
+                    issue = updatedIssue; // Refresh UI with updated issue
+                  });
+
+                  // Pass updated issue back to IssueListScreen if needed
+                  Navigator.of(context).pop(issue);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 56, 75, 112),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 14,
+                ),
+              ),
+              child: const Text("Update Issue", style: TextStyle(fontSize: 18)),
             ),
-          ),
+          ],
         ),
       ),
     );
