@@ -179,6 +179,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Add New Issue"),
+        foregroundColor: Colors.white,
         backgroundColor: const Color.fromARGB(255, 56, 75, 112),
       ),
       body: SingleChildScrollView(
@@ -204,7 +205,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
                       "GMS Composite",
                       "GMS Textile",
                       "GMS Trims",
-                      "GMS Testing Laboratory",
+                      "GMS Laboratory",
                     ],
                     (val) => setState(() => companyName = val),
                   ),

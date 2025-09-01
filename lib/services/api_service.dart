@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = "http://192.168.137.184/api/";
+  static const String baseUrl = "http://10.101.243.82:8000/api/";
 
   // In-memory
   static String? _token;
