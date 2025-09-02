@@ -142,7 +142,7 @@ class _IssueUpdateScreenState extends State<IssueUpdateScreen> {
     return Flexible(
       fit: FlexFit.loose,
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

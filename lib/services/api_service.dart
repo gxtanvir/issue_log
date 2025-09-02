@@ -1,4 +1,3 @@
-// lib/services/api_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +19,7 @@ class ApiService {
   static List<String>? get companies => _companies;
   static List<String>? get modules => _modules;
 
-  // ---------------- AUTH ----------------
+  // Authentications
   static Future<bool> login(String userId, String password) async {
     try {
       final url = Uri.parse("${baseUrl}accounts/login/");
@@ -33,32 +32,30 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
-        // JWT token (TokenObtainPairView returns {'refresh', 'access'})
         _token = data['access'];
-
-        // Some of our earlier code returned user under "user" key
         final user = data['user'] ?? {};
 
         _username = user['user_id']?.toString() ?? user['id']?.toString();
         _name = user['name']?.toString();
 
-        // Company can be single string or list — normalize to List<String>
-        if (user['company'] == null) {
-          _companies = [];
-        } else if (user['company'] is List) {
-          _companies = List<String>.from(user['company']);
+        // ✅ normalize companies to List<String>
+        final rawCompanies = user['companies'];
+        if (rawCompanies is List) {
+          _companies = List<String>.from(rawCompanies.map((c) => c.toString()));
+        } else if (rawCompanies is String && rawCompanies.isNotEmpty) {
+          _companies = [rawCompanies];
         } else {
-          _companies = [user['company'].toString()];
+          _companies = [];
         }
 
-        // Modules comes as list (hopefully)
-        if (user['modules'] == null) {
-          _modules = [];
-        } else if (user['modules'] is List) {
-          _modules = List<String>.from(user['modules']);
+        // ✅ normalize modules to List<String>
+        final rawModules = user['modules'];
+        if (rawModules is List) {
+          _modules = List<String>.from(rawModules.map((m) => m.toString()));
+        } else if (rawModules is String && rawModules.isNotEmpty) {
+          _modules = [rawModules];
         } else {
-          // if single value stored as comma separated or single string
-          _modules = List<String>.from(user['modules']);
+          _modules = [];
         }
 
         final prefs = await SharedPreferences.getInstance();
@@ -93,7 +90,7 @@ class ApiService {
           'name': name,
           'user_id': userId,
           'password': password,
-          'company': companies,
+          'companies': companies,
           'modules': modules,
         }),
       );
@@ -126,23 +123,43 @@ class ApiService {
     return _name;
   }
 
-  static Future<List<String>> getCompanies() async {
-    if (_companies != null) return _companies!;
-    final prefs = await SharedPreferences.getInstance();
-    final list = prefs.getStringList('companies') ?? [];
-    _companies = list;
-    return _companies!;
+  static Future<List<String>> fetchCompanies() async {
+    final token = await getToken();
+    if (token == null) return [];
+    final url = Uri.parse("${baseUrl}accounts/companies/");
+    final res = await http.get(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      return List<String>.from(data.map((e) => e.toString()));
+    }
+    return [];
   }
 
-  static Future<List<String>> getModules() async {
-    if (_modules != null) return _modules!;
-    final prefs = await SharedPreferences.getInstance();
-    final list = prefs.getStringList('modules') ?? [];
-    _modules = list;
-    return _modules!;
+  static Future<List<String>> fetchModules() async {
+    final token = await getToken();
+    if (token == null) return [];
+    final url = Uri.parse("${baseUrl}accounts/modules/");
+    final res = await http.get(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      return List<String>.from(data.map((e) => e.toString()));
+    }
+    return [];
   }
 
-  // ---------------- ISSUES ----------------
+  // Issues
   static Future<List<dynamic>> fetchIssues() async {
     final token = await getToken();
     if (token == null) throw Exception('Token not found');

@@ -22,9 +22,9 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
   final TextEditingController commentsCtrl = TextEditingController();
 
   // Dropdown values
-  String? companyName = 'GMS Composite';
-  String? priority = 'High';
-  String? module = 'MM';
+  String? companyName;
+  String? priority;
+  String? module;
   String? via = 'Phone';
   String? responsibleParty = 'Logic';
   String? gmsStatus = 'Pending';
@@ -63,7 +63,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
       "responsible_party": responsibleParty,
       "responsible_person":
           responsibleParty == "MIS"
-              ? ApiService.username ?? ""
+              ? ApiService.name ?? ""
               : responsiblePersonCtrl.text.trim(),
       "gms_status": gmsStatus,
       "deadline": _fmtDate(deadline),
@@ -113,7 +113,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
     return Flexible(
       fit: FlexFit.loose,
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -130,13 +130,15 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
   Widget _buildTextField(
     String label,
     TextEditingController controller,
-    int maxLines,
-  ) {
+    int maxLines, {
+    bool readOnly = false,
+  }) {
     return Flexible(
       fit: FlexFit.loose,
       child: TextFormField(
         controller: controller,
         maxLines: maxLines,
+        readOnly: readOnly,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -155,12 +157,13 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
   Widget _buildDatePickerWidget(
     String label,
     DateTime? date,
-    Function(DateTime) onPicked,
-  ) {
+    Function(DateTime) onPicked, {
+    bool readOnly = false,
+  }) {
     return Flexible(
       fit: FlexFit.loose,
       child: InkWell(
-        onTap: () => _pickDate(onPicked, initialDate: date),
+        onTap: readOnly ? null : () => _pickDate(onPicked, initialDate: date),
         child: InputDecorator(
           decoration: InputDecoration(
             labelText: label,
@@ -196,6 +199,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
                     "Issue Raise Date",
                     issueRaiseDate,
                     (d) => setState(() => issueRaiseDate = d),
+                    readOnly: true,
                   ),
                   const SizedBox(width: 12),
                   _buildDropdown(
@@ -270,8 +274,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
                       setState(() {
                         responsibleParty = val;
                         if (val == "MIS") {
-                          responsiblePersonCtrl.text =
-                              ApiService.username ?? "";
+                          responsiblePersonCtrl.text = ApiService.name ?? "";
                         } else {
                           responsiblePersonCtrl.clear();
                         }
@@ -283,6 +286,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
                     "Responsible Person",
                     responsiblePersonCtrl,
                     1,
+                    readOnly: responsibleParty == 'MIS',
                   ),
                 ],
               ),

@@ -133,9 +133,10 @@ class _IssueListScreenState extends State<IssueListScreen> {
         backgroundColor: const Color.fromARGB(255, 56, 75, 112),
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: Icon(Icons.logout, color: Colors.white),
+          TextButton.icon(
             onPressed: _logout,
+            label: Text(ApiService.name!),
+            icon: Icon(Icons.logout),
           ),
         ],
       ),
