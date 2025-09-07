@@ -74,41 +74,45 @@ class _IssueDetailsScreenState extends State<IssueDetailsScreen> {
             row("Completed Date", fmtDate(issue['complete_date'])),
             row("Comment", issue['comments'] ?? "-"),
             const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () async {
-                final updatedIssue = await Navigator.of(
-                  context,
-                ).push<Map<String, dynamic>>(
-                  MaterialPageRoute(
-                    builder:
-                        (_) => IssueUpdateScreen(
-                          issue: issue,
-                          issueId: issue['issue_id'],
-                        ),
+            if (issue['gms_status'] == "Pending")
+              ElevatedButton(
+                onPressed: () async {
+                  final updatedIssue = await Navigator.of(
+                    context,
+                  ).push<Map<String, dynamic>>(
+                    MaterialPageRoute(
+                      builder:
+                          (_) => IssueUpdateScreen(
+                            issue: issue,
+                            issueId: issue['issue_id'],
+                          ),
+                    ),
+                  );
+
+                  if (updatedIssue != null) {
+                    setState(() {
+                      issue = updatedIssue; // Refresh UI with updated issue
+                    });
+
+                    // Pass updated issue back to IssueListScreen if needed
+                    Navigator.of(context).pop(issue);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 56, 75, 112),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                );
-
-                if (updatedIssue != null) {
-                  setState(() {
-                    issue = updatedIssue; // Refresh UI with updated issue
-                  });
-
-                  // Pass updated issue back to IssueListScreen if needed
-                  Navigator.of(context).pop(issue);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 56, 75, 112),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 14,
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 14,
+                child: const Text(
+                  "Update Issue",
+                  style: TextStyle(fontSize: 18),
                 ),
               ),
-              child: const Text("Update Issue", style: TextStyle(fontSize: 18)),
-            ),
           ],
         ),
       ),

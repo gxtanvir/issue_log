@@ -25,7 +25,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
   String? companyName;
   String? priority;
   String? module;
-  String? via = 'Phone';
+  String? via;
   String? responsibleParty = 'Logic';
   String? gmsStatus = 'Pending';
 
@@ -37,7 +37,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
   String? _fmtDate(DateTime? d) => d?.toIso8601String().split("T").first;
 
   Future<void> _pickDate(
-    Function(DateTime) onDatePicked, {
+    Function(DateTime?) onDatePicked, {
     DateTime? initialDate,
   }) async {
     final picked = await showDatePicker(
@@ -46,7 +46,10 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
-    if (picked != null) onDatePicked(picked);
+
+    setState(() {
+      onDatePicked(picked);
+    });
   }
 
   Future<void> _saveIssue() async {
@@ -123,6 +126,12 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
                 .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                 .toList(),
         onChanged: onChanged,
+        validator: (val) {
+          if (val == null || val.isEmpty) {
+            return "Required";
+          }
+          return null;
+        },
       ),
     );
   }
@@ -137,6 +146,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
       fit: FlexFit.loose,
       child: TextFormField(
         controller: controller,
+        textCapitalization: TextCapitalization.sentences,
         maxLines: maxLines,
         readOnly: readOnly,
         decoration: InputDecoration(
@@ -157,7 +167,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
   Widget _buildDatePickerWidget(
     String label,
     DateTime? date,
-    Function(DateTime) onPicked, {
+    Function(DateTime?) onPicked, {
     bool readOnly = false,
   }) {
     return Flexible(
@@ -179,6 +189,9 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userCompanies = ApiService.companies ?? [];
+    final userModules = ApiService.modules ?? [];
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Add New Issue"),
@@ -205,12 +218,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
                   _buildDropdown(
                     "Company Name",
                     companyName,
-                    [
-                      "GMS Composite",
-                      "GMS Textile",
-                      "GMS Trims",
-                      "GMS Laboratory",
-                    ],
+                    userCompanies,
                     (val) => setState(() => companyName = val),
                   ),
                 ],
@@ -226,21 +234,12 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
                     "Regular",
                   ], (val) => setState(() => priority = val)),
                   const SizedBox(width: 12),
-                  _buildDropdown("Module", module, [
-                    'MM',
-                    'TNA',
-                    'Plan',
-                    'Commercial',
-                    'SCM',
-                    'Inventory',
-                    'Prod',
-                    'S.Con',
-                    'Printing',
-                    'AOP',
-                    "Wash",
-                    "Embroidery",
-                    "Laboratory",
-                  ], (val) => setState(() => module = val)),
+                  _buildDropdown(
+                    "Module",
+                    module,
+                    userModules,
+                    (val) => setState(() => module = val),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),

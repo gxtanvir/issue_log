@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:issue_log/screens/auth/login.dart';
 import 'package:issue_log/screens/home/issue_add.dart';
-import 'package:issue_log/screens/home/issue_list.dart';
 import 'package:issue_log/screens/home/splash_screen.dart';
 import 'package:issue_log/theme/app_theme.dart';
 

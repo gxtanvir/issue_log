@@ -85,6 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 6),
                     TextFormField(
                       autocorrect: false,
+                      textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),

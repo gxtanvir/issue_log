@@ -15,40 +15,45 @@ class _SignupScreenState extends State<SignupScreen> {
   var _userName = '';
   var _enteredId = '';
   var _enteredPassword = '';
-  List<String> _selectedCompanies = [];
-  List<String> _selectedModules = [];
+
+  List<int> _selectedCompanyIds = [];
+  List<int> _selectedModuleIds = [];
   bool _isAuthenticating = false;
 
-  // Dropdown values
-  final List<String> companies = [
-    "GMS Composite",
-    "GMS Textile",
-    "GMS Trims",
-    "GMS Testing Laboratory",
-  ];
+  // Data from API
+  List<Map<String, dynamic>> companies = [];
+  List<Map<String, dynamic>> modules = [];
+  bool _isLoadingDropdowns = true;
 
-  final List<String> modules = [
-    'MM',
-    'TNA',
-    'Plan',
-    'Commercial',
-    'SCM',
-    'Inventory',
-    'Prod',
-    'S.Con',
-    'Printing',
-    'AOP',
-    "Wash",
-    "Embroidery",
-    "Laboratory",
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchDropdownData();
+  }
+
+  Future<void> _fetchDropdownData() async {
+    try {
+      final companyList = await ApiService.fetchCompanies();
+      final moduleList = await ApiService.fetchModules();
+      setState(() {
+        companies = companyList;
+        modules = moduleList;
+        _isLoadingDropdowns = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingDropdowns = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to load dropdown data: $e")),
+      );
+    }
+  }
 
   // Submit Method
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
-    if (_selectedCompanies.isEmpty || _selectedModules.isEmpty) {
+    if (_selectedCompanyIds.isEmpty || _selectedModuleIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please select Company and Modules")),
       );
@@ -61,8 +66,8 @@ class _SignupScreenState extends State<SignupScreen> {
       _userName,
       _enteredId,
       _enteredPassword,
-      _selectedCompanies,
-      _selectedModules,
+      _selectedCompanyIds,
+      _selectedModuleIds,
     );
 
     setState(() => _isAuthenticating = false);
@@ -71,6 +76,7 @@ class _SignupScreenState extends State<SignupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Registration successful! Please login.")),
       );
+      Navigator.of(context).pop();
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (ctx) => const LoginScreen()),
@@ -92,7 +98,6 @@ class _SignupScreenState extends State<SignupScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SizedBox(height: constraints.maxHeight * 0.01),
                   Center(
@@ -117,170 +122,197 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Name
-                        const Text(
-                          "Name",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Color.fromARGB(255, 56, 75, 112),
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        TextFormField(
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                  if (_isLoadingDropdowns)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Name
+                          const Text(
+                            "Name",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Color.fromARGB(255, 56, 75, 112),
                             ),
-                            prefixIcon: const Icon(
-                              Icons.person_outline_rounded,
-                            ),
-                            hintText: "Enter your full name",
                           ),
-                          validator:
-                              (value) =>
-                                  value != null && value.trim().length >= 4
-                                      ? null
-                                      : "Name must be 4 characters long",
-                          onSaved: (newValue) => _userName = newValue!,
-                        ),
-                        SizedBox(height: 16),
+                          const SizedBox(height: 5),
+                          TextFormField(
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.person_outline_rounded,
+                              ),
+                              hintText: "Enter your full name",
+                            ),
+                            validator:
+                                (value) =>
+                                    value != null && value.trim().length >= 4
+                                        ? null
+                                        : "Name must be 4 characters long",
+                            onSaved: (newValue) => _userName = newValue!,
+                          ),
+                          const SizedBox(height: 16),
 
-                        // User ID
-                        const Text(
-                          "User ID",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Color.fromARGB(255, 56, 75, 112),
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        TextFormField(
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                          // User ID
+                          const Text(
+                            "User ID",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Color.fromARGB(255, 56, 75, 112),
                             ),
-                            prefixIcon: const Icon(Icons.smartphone_outlined),
-                            hintText: "Enter your ID",
                           ),
-                          validator:
-                              (value) =>
-                                  value != null &&
-                                          value.trim().length >= 4 &&
-                                          value.trim().length < 16
-                                      ? null
-                                      : "Id length must remain between 4-15",
-                          onSaved: (newValue) => _enteredId = newValue!.trim().toUpperCase(),
-                        ),
-                        SizedBox(height: 16),
+                          const SizedBox(height: 5),
+                          TextFormField(
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              prefixIcon: const Icon(Icons.smartphone_outlined),
+                              hintText: "Enter your ID",
+                            ),
+                            validator:
+                                (value) =>
+                                    value != null &&
+                                            value.trim().length >= 4 &&
+                                            value.trim().length < 16
+                                        ? null
+                                        : "Id length must remain between 4-15",
+                            onSaved:
+                                (newValue) =>
+                                    _enteredId = newValue!.trim().toUpperCase(),
+                          ),
+                          const SizedBox(height: 16),
 
-                        // Password
-                        const Text(
-                          "Password",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Color.fromARGB(255, 56, 75, 112),
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        TextFormField(
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                          // Password
+                          const Text(
+                            "Password",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Color.fromARGB(255, 56, 75, 112),
                             ),
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            hintText: "Enter your password",
                           ),
-                          validator:
-                              (value) =>
-                                  value != null && value.trim().length >= 6
-                                      ? null
-                                      : "Password must be at least 6 characters",
-                          onSaved: (newValue) => _enteredPassword = newValue!,
-                        ),
-                        SizedBox(height: 16),
+                          const SizedBox(height: 5),
+                          TextFormField(
+                            obscureText: true,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              hintText: "Enter your password",
+                            ),
+                            validator:
+                                (value) =>
+                                    value != null && value.trim().length >= 6
+                                        ? null
+                                        : "Password must be at least 6 characters",
+                            onSaved: (newValue) => _enteredPassword = newValue!,
+                          ),
+                          const SizedBox(height: 16),
 
-                        // Compnay Multi Select Custom Dropdown
-                        const Text(
-                          "Company",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Color.fromARGB(255, 56, 75, 112),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        CustomDropdown.multiSelect(
-                          decoration: CustomDropdownDecoration(
-                            closedBorder: Border.all(
-                              color: Colors.grey.shade600,
-                              width: 1,
+                          // Company Dropdown
+                          const Text(
+                            "Company",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Color.fromARGB(255, 56, 75, 112),
                             ),
-                            closedBorderRadius: BorderRadius.circular(10),
-                            closedFillColor: Colors.white,
-                            hintStyle: const TextStyle(color: Colors.grey),
-                            prefixIcon: const Icon(
-                              Icons.business,
-                              color: Colors.grey,
-                            ),
-                            closedSuffixIcon: const Icon(Icons.arrow_drop_down),
                           ),
-                          items: companies,
-                          hintText: 'Select Company',
-                          onListChanged: (value) {
-                            _selectedCompanies = value;
-                          },
-                        ),
+                          const SizedBox(height: 10),
+                          CustomDropdown.multiSelect(
+                            decoration: CustomDropdownDecoration(
+                              closedBorder: Border.all(
+                                color: Colors.grey.shade600,
+                                width: 1,
+                              ),
+                              closedBorderRadius: BorderRadius.circular(10),
+                              closedFillColor: Colors.white,
+                              hintStyle: const TextStyle(color: Colors.grey),
+                              prefixIcon: const Icon(
+                                Icons.business,
+                                color: Colors.grey,
+                              ),
+                              closedSuffixIcon: const Icon(
+                                Icons.arrow_drop_down,
+                              ),
+                            ),
+                            items:
+                                companies
+                                    .map((c) => c['name'].toString())
+                                    .toList(),
+                            hintText: 'Select Company',
+                            onListChanged: (selectedNames) {
+                              _selectedCompanyIds =
+                                  companies
+                                      .where(
+                                        (c) =>
+                                            selectedNames.contains(c['name']),
+                                      )
+                                      .map<int>((c) => c['id'] as int)
+                                      .toList();
+                            },
+                          ),
+                          const SizedBox(height: 16),
 
-                        SizedBox(height: 16),
-
-                        //Module Dropdown MultiSlect
-                        const Text(
-                          "Modules",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Color.fromARGB(255, 56, 75, 112),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        CustomDropdown.multiSelect(
-                          decoration: CustomDropdownDecoration(
-                            closedBorder: Border.all(
-                              color: Colors.grey.shade600,
-                              width: 1,
+                          // Module Dropdown
+                          const Text(
+                            "Modules",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Color.fromARGB(255, 56, 75, 112),
                             ),
-                            closedBorderRadius: BorderRadius.circular(10),
-                            closedFillColor: Colors.white,
-                            hintStyle: const TextStyle(color: Colors.grey),
-                            prefixIcon: const Icon(
-                              Icons.apps,
-                              color: Colors.grey,
-                            ),
-                            closedSuffixIcon: const Icon(Icons.arrow_drop_down),
                           ),
-                          items: modules,
-                          hintText: 'Select Module',
-                          onListChanged: (value) {
-                            _selectedModules = value;
-                          },
-                        ),
-                      ],
+                          const SizedBox(height: 10),
+                          CustomDropdown.multiSelect(
+                            decoration: CustomDropdownDecoration(
+                              closedBorder: Border.all(
+                                color: Colors.grey.shade600,
+                                width: 1,
+                              ),
+                              closedBorderRadius: BorderRadius.circular(10),
+                              closedFillColor: Colors.white,
+                              hintStyle: const TextStyle(color: Colors.grey),
+                              prefixIcon: const Icon(
+                                Icons.apps,
+                                color: Colors.grey,
+                              ),
+                              closedSuffixIcon: const Icon(
+                                Icons.arrow_drop_down,
+                              ),
+                            ),
+                            items:
+                                modules
+                                    .map((m) => m['name'].toString())
+                                    .toList(),
+                            hintText: 'Select Module',
+                            onListChanged: (selectedNames) {
+                              _selectedModuleIds =
+                                  modules
+                                      .where(
+                                        (m) =>
+                                            selectedNames.contains(m['name']),
+                                      )
+                                      .map<int>((m) => m['id'] as int)
+                                      .toList();
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 20),
-
+                  const SizedBox(height: 20),
                   if (_isAuthenticating)
-                    const Center(child: CircularProgressIndicator()),
-                  if (!_isAuthenticating)
+                    const Center(child: CircularProgressIndicator())
+                  else
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromARGB(255, 56, 75, 112),
@@ -314,7 +346,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
+                              builder: (ctx) => const LoginScreen(),
                             ),
                           );
                         },

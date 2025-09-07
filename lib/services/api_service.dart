@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = "http://10.101.243.82:8000/api/";
+  static const String baseUrl = "https://gxtanvir.pythonanywhere.com/api/";
 
   // In-memory
   static String? _token;
@@ -19,7 +19,8 @@ class ApiService {
   static List<String>? get companies => _companies;
   static List<String>? get modules => _modules;
 
-  // Authentications
+  // ---------------- AUTH -----------------
+  // ApiService.dart
   static Future<bool> login(String userId, String password) async {
     try {
       final url = Uri.parse("${baseUrl}accounts/login/");
@@ -33,40 +34,50 @@ class ApiService {
         final data = json.decode(response.body);
 
         _token = data['access'];
-        final user = data['user'] ?? {};
 
-        _username = user['user_id']?.toString() ?? user['id']?.toString();
-        _name = user['name']?.toString();
-
-        // ✅ normalize companies to List<String>
-        final rawCompanies = user['companies'];
-        if (rawCompanies is List) {
-          _companies = List<String>.from(rawCompanies.map((c) => c.toString()));
-        } else if (rawCompanies is String && rawCompanies.isNotEmpty) {
-          _companies = [rawCompanies];
-        } else {
-          _companies = [];
-        }
-
-        // ✅ normalize modules to List<String>
-        final rawModules = user['modules'];
-        if (rawModules is List) {
-          _modules = List<String>.from(rawModules.map((m) => m.toString()));
-        } else if (rawModules is String && rawModules.isNotEmpty) {
-          _modules = [rawModules];
-        } else {
-          _modules = [];
-        }
-
+        // Save token in prefs
         final prefs = await SharedPreferences.getInstance();
         if (_token != null) await prefs.setString('token', _token!);
-        if (_username != null) await prefs.setString('username', _username!);
-        if (_name != null) await prefs.setString('name', _name!);
-        if (_companies != null)
-          await prefs.setStringList('companies', _companies!);
-        if (_modules != null) await prefs.setStringList('modules', _modules!);
 
-        return true;
+        // 🔥 Fetch user details from /me/
+        final meUrl = Uri.parse("${baseUrl}accounts/me/");
+        final meRes = await http.get(
+          meUrl,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $_token",
+          },
+        );
+
+        if (meRes.statusCode == 200) {
+          final user = json.decode(meRes.body);
+
+          _username = user['user_id']?.toString();
+          _name = user['name']?.toString();
+
+          final rawCompanies = user['companies'];
+          _companies =
+              rawCompanies is List
+                  ? List<String>.from(rawCompanies.map((c) => c.toString()))
+                  : [];
+
+          final rawModules = user['modules'];
+          _modules =
+              rawModules is List
+                  ? List<String>.from(rawModules.map((m) => m.toString()))
+                  : [];
+
+          // Save prefs
+          if (_username != null) await prefs.setString('username', _username!);
+          if (_name != null) await prefs.setString('name', _name!);
+          if (_companies != null)
+            await prefs.setStringList('companies', _companies!);
+          if (_modules != null) await prefs.setStringList('modules', _modules!);
+
+          return true;
+        }
+      } else {
+        print("Login failed: ${response.body}");
       }
     } catch (e) {
       print("Login error: $e");
@@ -78,8 +89,8 @@ class ApiService {
     String name,
     String userId,
     String password,
-    List<String> companies,
-    List<String> modules,
+    List<int> companyIds,
+    List<int> moduleIds,
   ) async {
     try {
       final url = Uri.parse("${baseUrl}accounts/register/");
@@ -90,18 +101,25 @@ class ApiService {
           'name': name,
           'user_id': userId,
           'password': password,
-          'companies': companies,
-          'modules': modules,
+          'companies': companyIds,
+          'modules': moduleIds,
         }),
       );
-      return response.statusCode == 201;
+
+      if (response.statusCode == 201) {
+        // ✅ Signup successful, user can login now
+        return true;
+      } else {
+        print("Signup failed: ${response.body}");
+        return false;
+      }
     } catch (e) {
       print("Signup error: $e");
       return false;
     }
   }
 
-  // Get saved token (reads from memory first, otherwise from prefs)
+  // ---------------- UTILS -----------------
   static Future<String?> getToken() async {
     if (_token != null) return _token;
     final prefs = await SharedPreferences.getInstance();
@@ -123,43 +141,36 @@ class ApiService {
     return _name;
   }
 
-  static Future<List<String>> fetchCompanies() async {
-    final token = await getToken();
-    if (token == null) return [];
+  // ---------------- COMPANY / MODULE API -----------------
+  static Future<List<Map<String, dynamic>>> fetchCompanies() async {
     final url = Uri.parse("${baseUrl}accounts/companies/");
     final res = await http.get(
       url,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
+      headers: {"Content-Type": "application/json"},
     );
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
-      return List<String>.from(data.map((e) => e.toString()));
+      return List<Map<String, dynamic>>.from(data);
     }
+    print("fetchCompanies error: ${res.body}");
     return [];
   }
 
-  static Future<List<String>> fetchModules() async {
-    final token = await getToken();
-    if (token == null) return [];
+  static Future<List<Map<String, dynamic>>> fetchModules() async {
     final url = Uri.parse("${baseUrl}accounts/modules/");
     final res = await http.get(
       url,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
+      headers: {"Content-Type": "application/json"},
     );
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
-      return List<String>.from(data.map((e) => e.toString()));
+      return List<Map<String, dynamic>>.from(data);
     }
+    print("fetchModules error: ${res.body}");
     return [];
   }
 
-  // Issues
+  // ---------------- ISSUES -----------------
   static Future<List<dynamic>> fetchIssues() async {
     final token = await getToken();
     if (token == null) throw Exception('Token not found');
@@ -190,7 +201,6 @@ class ApiService {
     return res.statusCode == 201;
   }
 
-  // Update (PATCH)
   static Future<bool> updateIssue(
     int issueId,
     Map<String, dynamic> updatedData,
