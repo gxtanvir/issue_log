@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:issue_log/screens/widgets/exit_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:issue_log/services/api_service.dart';
 import 'package:issue_log/screens/auth/login.dart';
@@ -151,8 +150,7 @@ class _IssueListScreenState extends State<IssueListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ExitConfirmation(
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           backgroundColor: const Color.fromARGB(255, 56, 75, 112),
           title: Row(
@@ -181,6 +179,7 @@ class _IssueListScreenState extends State<IssueListScreen> {
             if (result == true) fetchIssues();
           },
         ),
+        // drawer: MainDrawer(),
         body: loading
             ? const Center(child: CircularProgressIndicator())
             : RefreshIndicator(
@@ -291,7 +290,6 @@ class _IssueListScreenState extends State<IssueListScreen> {
                         ],
                       ),
               ),
-      ),
     );
   }
 }

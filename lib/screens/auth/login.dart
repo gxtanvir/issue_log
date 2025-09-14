@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:issue_log/screens/admin/home.dart';
 import 'package:issue_log/screens/auth/signup.dart';
 import 'package:issue_log/screens/home/issue_list.dart';
 import 'package:issue_log/services/api_service.dart';
@@ -16,21 +17,31 @@ class _LoginScreenState extends State<LoginScreen> {
   String _password = '';
   bool _isAuthenticating = false;
 
-  void _submit() async {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
     setState(() => _isAuthenticating = true);
 
-    bool success = await ApiService.login(_userId, _password);
+    final success = await ApiService.login(_userId, _password);
 
     setState(() => _isAuthenticating = false);
 
     if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => IssueListScreen()),
-      );
+      final isAdmin = await ApiService.getIsAdminFromPrefs();
+      debugPrint("🔑 Login success | Admin? $isAdmin");
+
+      if (isAdmin == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminSummaryScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => IssueListScreen()),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Login failed: check ID/password")),
@@ -85,20 +96,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 6),
                     TextFormField(
                       autocorrect: false,
-                      textCapitalization: TextCapitalization.sentences,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                         prefixIcon: const Icon(Icons.smartphone_outlined),
-                        hintText: "Enter your id",
+                        hintText: "Enter your ID",
                       ),
                       validator: (value) {
-                        if (value != null && value.trim().length >= 4)
+                        if (value != null && value.trim().length >= 4) {
                           return null;
-                        return "Enter a valid  ID";
+                        }
+                        return "Enter a valid ID";
                       },
-                      onSaved: (val) => _userId = val!.toUpperCase(),
+                      onSaved: (val) => _userId = val!.trim().toUpperCase(),
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -120,7 +131,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       obscureText: true,
                       validator: (val) {
-                        if (val != null && val.trim().length >= 6) return null;
+                        if (val != null && val.trim().length >= 6) {
+                          return null;
+                        }
                         return "Password should be at least 6 characters";
                       },
                       onSaved: (val) => _password = val!.trim(),
@@ -146,16 +159,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: const Text('Login', style: TextStyle(fontSize: 18)),
                 ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "Don't have account?",
+                    "Don't have an account?",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                   ),
                   TextButton(
                     onPressed: () {
+                      Navigator.of(context).pop();
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const SignupScreen()),

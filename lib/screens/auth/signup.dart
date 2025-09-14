@@ -14,6 +14,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   var _userName = '';
   var _enteredId = '';
+  var _enteredEmail = '';
   var _enteredPassword = '';
 
   List<int> _selectedCompanyIds = [];
@@ -65,6 +66,7 @@ class _SignupScreenState extends State<SignupScreen> {
     bool success = await ApiService.signup(
       _userName,
       _enteredId,
+      // _enteredEmail,
       _enteredPassword,
       _selectedCompanyIds,
       _selectedModuleIds,
@@ -77,7 +79,7 @@ class _SignupScreenState extends State<SignupScreen> {
         const SnackBar(content: Text("Registration successful! Please login.")),
       );
       Navigator.of(context).pop();
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (ctx) => const LoginScreen()),
       );
@@ -189,6 +191,34 @@ class _SignupScreenState extends State<SignupScreen> {
                                     _enteredId = newValue!.trim().toUpperCase(),
                           ),
                           const SizedBox(height: 16),
+
+                          // // Email
+                          // const Text(
+                          //   "Email",
+                          //   style: TextStyle(
+                          //     fontWeight: FontWeight.bold,
+                          //     fontSize: 18,
+                          //     color: Color.fromARGB(255, 56, 75, 112),
+                          //   ),
+                          // ),
+                          // const SizedBox(height: 5),
+                          // TextFormField(
+                          //   decoration: InputDecoration(
+                          //     border: OutlineInputBorder(
+                          //       borderRadius: BorderRadius.circular(10),
+                          //     ),
+                          //     prefixIcon: const Icon(Icons.smartphone_outlined),
+                          //     hintText: "Enter your Email",
+                          //   ),
+                          //   validator:
+                          //       (value) =>
+                          //           value != null && value.contains("@")
+                          //               ? null
+                          //               : "Enter a valid email address",
+                          //   onSaved:
+                          //       (newValue) => _enteredEmail = newValue!.trim(),
+                          // ),
+                          // const SizedBox(height: 16),
 
                           // Password
                           const Text(
@@ -343,6 +373,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       TextButton(
                         onPressed: () {
+                          Navigator.of(context).pop();
                           Navigator.push(
                             context,
                             MaterialPageRoute(

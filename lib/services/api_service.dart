@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = "https://gxtanvir.pythonanywhere.com/api/";
+  static const String baseUrl = "http://172.25.10.65:8000/api/";
 
   // In-memory
   static String? _token;
@@ -18,9 +18,9 @@ class ApiService {
   static String? get name => _name;
   static List<String>? get companies => _companies;
   static List<String>? get modules => _modules;
+  static bool? _isAdmin;
 
   // ---------------- AUTH -----------------
-  // ApiService.dart
   static Future<bool> login(String userId, String password) async {
     try {
       final url = Uri.parse("${baseUrl}accounts/login/");
@@ -32,14 +32,13 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-
         _token = data['access'];
 
         // Save token in prefs
         final prefs = await SharedPreferences.getInstance();
         if (_token != null) await prefs.setString('token', _token!);
 
-        // 🔥 Fetch user details from /me/
+        // Fetch user details from /me/
         final meUrl = Uri.parse("${baseUrl}accounts/me/");
         final meRes = await http.get(
           meUrl,
@@ -51,9 +50,10 @@ class ApiService {
 
         if (meRes.statusCode == 200) {
           final user = json.decode(meRes.body);
-
           _username = user['user_id']?.toString();
           _name = user['name']?.toString();
+          _isAdmin =
+              (user['is_staff'] == true) || (user['is_superuser'] == true);
 
           final rawCompanies = user['companies'];
           _companies =
@@ -73,6 +73,7 @@ class ApiService {
           if (_companies != null)
             await prefs.setStringList('companies', _companies!);
           if (_modules != null) await prefs.setStringList('modules', _modules!);
+          if (_isAdmin != null) await prefs.setBool('is_admin', _isAdmin!);
 
           return true;
         }
@@ -85,6 +86,7 @@ class ApiService {
     return false;
   }
 
+  // Signup
   static Future<bool> signup(
     String name,
     String userId,
@@ -107,7 +109,6 @@ class ApiService {
       );
 
       if (response.statusCode == 201) {
-        // ✅ Signup successful, user can login now
         return true;
       } else {
         print("Signup failed: ${response.body}");
@@ -117,6 +118,32 @@ class ApiService {
       print("Signup error: $e");
       return false;
     }
+  }
+
+  // Password Reset
+  static Future<bool> requestPasswordReset(String email) async {
+    final url = Uri.parse("${baseUrl}accounts/password-reset-request/");
+    final response = await http.post(url, body: {"email": email});
+    return response.statusCode == 200;
+  }
+
+  static Future<bool> verifyResetCode(String email, String code) async {
+    final url = Uri.parse("${baseUrl}accounts/password-reset-confirm/");
+    final response = await http.post(url, body: {"email": email, "code": code});
+    return response.statusCode == 200;
+  }
+
+  static Future<bool> resetPassword(
+    String email,
+    String code,
+    String password,
+  ) async {
+    final url = Uri.parse("${baseUrl}accounts/password-reset-confirm/");
+    final response = await http.post(
+      url,
+      body: {"email": email, "code": code, "password": password},
+    );
+    return response.statusCode == 200;
   }
 
   // ---------------- UTILS -----------------
@@ -141,17 +168,22 @@ class ApiService {
     return _name;
   }
 
-  // ---------------- COMPANY / MODULE API -----------------
+  static Future<bool?> getIsAdminFromPrefs() async {
+    if (_isAdmin != null) return _isAdmin;
+    final prefs = await SharedPreferences.getInstance();
+    _isAdmin = prefs.getBool('is_admin') ?? false;
+    return _isAdmin;
+  }
+
+  // ---------------- COMPANY / MODULE -----------------
   static Future<List<Map<String, dynamic>>> fetchCompanies() async {
     final url = Uri.parse("${baseUrl}accounts/companies/");
     final res = await http.get(
       url,
       headers: {"Content-Type": "application/json"},
     );
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      return List<Map<String, dynamic>>.from(data);
-    }
+    if (res.statusCode == 200)
+      return List<Map<String, dynamic>>.from(json.decode(res.body));
     print("fetchCompanies error: ${res.body}");
     return [];
   }
@@ -162,10 +194,8 @@ class ApiService {
       url,
       headers: {"Content-Type": "application/json"},
     );
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      return List<Map<String, dynamic>>.from(data);
-    }
+    if (res.statusCode == 200)
+      return List<Map<String, dynamic>>.from(json.decode(res.body));
     print("fetchModules error: ${res.body}");
     return [];
   }
@@ -174,13 +204,9 @@ class ApiService {
   static Future<List<dynamic>> fetchIssues() async {
     final token = await getToken();
     if (token == null) throw Exception('Token not found');
-    final url = Uri.parse("${baseUrl}issues/");
     final res = await http.get(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse("${baseUrl}issues/"),
+      headers: {'Authorization': 'Bearer $token'},
     );
     if (res.statusCode == 200) return json.decode(res.body);
     throw Exception('Failed to load issues: ${res.body}');
@@ -189,9 +215,8 @@ class ApiService {
   static Future<bool> addIssue(Map<String, dynamic> issueData) async {
     final token = await getToken();
     if (token == null) throw Exception('Token not found');
-    final url = Uri.parse("${baseUrl}issues/");
     final res = await http.post(
-      url,
+      Uri.parse("${baseUrl}issues/"),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -204,17 +229,47 @@ class ApiService {
   static Future<bool> updateIssue(
     int issueId,
     Map<String, dynamic> updatedData,
-    String token,
   ) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/issues/$issueId/'),
+    final token = await getToken();
+    if (token == null) throw Exception('Token not found');
+    final res = await http.put(
+      Uri.parse('${baseUrl}issues/$issueId/'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode(updatedData),
+      body: json.encode(updatedData),
+    );
+    return res.statusCode == 200;
+  }
+
+  // ---------------- SUMMARY / USER ISSUES (ADMIN ONLY) -----------------
+  static Future<List<dynamic>> getSummary({int? year, int? month}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString("token");
+    final query =
+        "?year=${year ?? DateTime.now().year}&month=${month ?? DateTime.now().month}";
+    final response = await http.get(
+      Uri.parse("${baseUrl}issues/summary/$query"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to load summary");
+    }
+  }
+
+  static Future<List<dynamic>> fetchIssuesForUser(String userId) async {
+    final token = await getToken();
+    if (token == null) throw Exception("Token not found");
+
+    final res = await http.get(
+      Uri.parse("${baseUrl}issues/user/$userId/"),
+      headers: {'Authorization': 'Bearer $token'},
     );
 
-    return response.statusCode == 200;
+    if (res.statusCode == 200) return json.decode(res.body);
+    throw Exception("Failed to fetch issues for user: ${res.body}");
   }
 }
