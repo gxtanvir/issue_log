@@ -27,6 +27,7 @@ class _IssueUpdateScreenState extends State<IssueUpdateScreen> {
   final TextEditingController issueDetailsCtrl = TextEditingController();
   final TextEditingController responsiblePersonCtrl = TextEditingController();
   final TextEditingController commentsCtrl = TextEditingController();
+  final TextEditingController crmController = TextEditingController();
 
   // Dropdown values
   String? companyName;
@@ -77,6 +78,7 @@ class _IssueUpdateScreenState extends State<IssueUpdateScreen> {
               : responsiblePersonCtrl.text.trim(),
       "gms_status": gmsStatus,
       "deadline": _fmtDate(deadline),
+      "crm": crmController.text.trim(),
       "complete_date": _fmtDate(completeDate),
       "comments":
           commentsCtrl.text.trim().isNotEmpty ? commentsCtrl.text.trim() : null,
@@ -193,6 +195,7 @@ class _IssueUpdateScreenState extends State<IssueUpdateScreen> {
             : null;
     deadline =
         issue["deadline"] != null ? DateTime.parse(issue["deadline"]) : null;
+    crmController.text = issue["crm"] ?? "";
     completeDate =
         issue["complete_date"] != null
             ? DateTime.parse(issue["complete_date"])
@@ -332,6 +335,21 @@ class _IssueUpdateScreenState extends State<IssueUpdateScreen> {
                 ],
               ),
               const SizedBox(height: 16),
+
+              // CRM field required if deadline is set
+              if (deadline != null)
+                _buildTextField('CRM', crmController, 1, false),
+              const SizedBox(height: 16),
+              // TextFormField(
+              //   controller: crmController,
+              //   decoration: const InputDecoration(labelText: "CRM"),
+              //   validator: (value) {
+              //     if (deadline != null && (value == null || value.isEmpty)) {
+              //       return "CRM is required when deadline is set";
+              //     }
+              //     return null;
+              //   },
+              // ),
 
               // Status
               _buildDropdown("Issue Status", gmsStatus, [

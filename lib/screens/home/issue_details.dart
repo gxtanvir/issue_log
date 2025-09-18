@@ -72,6 +72,7 @@ class _IssueDetailsScreenState extends State<IssueDetailsScreen> {
             row("Responsible Person", issue['responsible_person'] ?? "-"),
             row("Deadline", fmtDate(issue['deadline'])),
             row("Completed Date", fmtDate(issue['complete_date'])),
+            row("CRM", issue['crm'] ?? "-"),
             row("Comment", issue['comments'] ?? "-"),
             const SizedBox(height: 30),
             if (issue['gms_status'] == "Pending")

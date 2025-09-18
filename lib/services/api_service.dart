@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = "http://172.25.10.65:8000/api/";
+  static const String baseUrl = "http://172.25.12.159:8000/api/";
 
   // In-memory
   static String? _token;
@@ -11,14 +11,14 @@ class ApiService {
   static String? _name; // display name
   static List<String>? _companies;
   static List<String>? _modules;
+  static bool? _isAdmin;
 
-  // Public getters
+  // ---------------- GETTERS -----------------
   static String? get token => _token;
   static String? get username => _username;
   static String? get name => _name;
   static List<String>? get companies => _companies;
   static List<String>? get modules => _modules;
-  static bool? _isAdmin;
 
   // ---------------- AUTH -----------------
   static Future<bool> login(String userId, String password) async {
@@ -38,7 +38,7 @@ class ApiService {
         final prefs = await SharedPreferences.getInstance();
         if (_token != null) await prefs.setString('token', _token!);
 
-        // Fetch user details from /me/
+        // Fetch user details
         final meUrl = Uri.parse("${baseUrl}accounts/me/");
         final meRes = await http.get(
           meUrl,
@@ -56,24 +56,27 @@ class ApiService {
               (user['is_staff'] == true) || (user['is_superuser'] == true);
 
           final rawCompanies = user['companies'];
-          _companies =
-              rawCompanies is List
-                  ? List<String>.from(rawCompanies.map((c) => c.toString()))
-                  : [];
+          _companies = rawCompanies is List
+              ? List<String>.from(rawCompanies.map((c) => c.toString()))
+              : [];
 
           final rawModules = user['modules'];
-          _modules =
-              rawModules is List
-                  ? List<String>.from(rawModules.map((m) => m.toString()))
-                  : [];
+          _modules = rawModules is List
+              ? List<String>.from(rawModules.map((m) => m.toString()))
+              : [];
 
           // Save prefs
           if (_username != null) await prefs.setString('username', _username!);
           if (_name != null) await prefs.setString('name', _name!);
-          if (_companies != null)
+          if (_companies != null) {
             await prefs.setStringList('companies', _companies!);
-          if (_modules != null) await prefs.setStringList('modules', _modules!);
-          if (_isAdmin != null) await prefs.setBool('is_admin', _isAdmin!);
+          }
+          if (_modules != null) {
+            await prefs.setStringList('modules', _modules!);
+          }
+          if (_isAdmin != null) {
+            await prefs.setBool('is_admin', _isAdmin!);
+          }
 
           return true;
         }
@@ -182,8 +185,9 @@ class ApiService {
       url,
       headers: {"Content-Type": "application/json"},
     );
-    if (res.statusCode == 200)
+    if (res.statusCode == 200) {
       return List<Map<String, dynamic>>.from(json.decode(res.body));
+    }
     print("fetchCompanies error: ${res.body}");
     return [];
   }
@@ -194,8 +198,9 @@ class ApiService {
       url,
       headers: {"Content-Type": "application/json"},
     );
-    if (res.statusCode == 200)
+    if (res.statusCode == 200) {
       return List<Map<String, dynamic>>.from(json.decode(res.body));
+    }
     print("fetchModules error: ${res.body}");
     return [];
   }
@@ -271,5 +276,54 @@ class ApiService {
 
     if (res.statusCode == 200) return json.decode(res.body);
     throw Exception("Failed to fetch issues for user: ${res.body}");
+  }
+
+  // ---------------- NOTIFICATIONS -----------------
+  static Future<List<dynamic>> getUserNotifications() async {
+    final res = await _getWithAuth("notifications/");
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as List<dynamic>;
+    }
+    throw Exception('Failed to load notifications: ${res.body}');
+  }
+
+  static Future<int> getUnreadNotificationCount() async {
+    final res = await _getWithAuth("notifications/unread-count/");
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      return (data['unread'] as int?) ?? 0;
+    }
+    throw Exception('Failed to fetch unread count: ${res.body}');
+  }
+
+  static Future<bool> markNotificationRead(int id) async {
+    final res = await _postWithAuth("notifications/$id/mark-read/", {});
+    return res.statusCode == 200;
+  }
+
+  // ---------------- PRIVATE HELPERS -----------------
+  static Future<http.Response> _getWithAuth(String endpoint) async {
+    final token = await getToken();
+    if (token == null) throw Exception("Token not found");
+    final url = Uri.parse("$baseUrl$endpoint");
+    return await http.get(
+      url,
+      headers: {"Authorization": "Bearer $token"},
+    );
+  }
+
+  static Future<http.Response> _postWithAuth(
+      String endpoint, Map<String, dynamic> body) async {
+    final token = await getToken();
+    if (token == null) throw Exception("Token not found");
+    final url = Uri.parse("$baseUrl$endpoint");
+    return await http.post(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: json.encode(body),
+    );
   }
 }

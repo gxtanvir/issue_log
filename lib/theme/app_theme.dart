@@ -7,6 +7,17 @@ class AppTheme {
     return ThemeData(
       textTheme: GoogleFonts.robotoTextTheme(),
       brightness: Brightness.light,
+      appBarTheme: AppBarThemeData().copyWith(
+        backgroundColor: const Color.fromARGB(255, 56, 75, 112),
+        foregroundColor: Colors.white,
+        titleTextStyle: TextStyle(
+
+          color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+        )
+
+      ),
       elevatedButtonTheme: elevatedButtonTheme,
     );
   }
