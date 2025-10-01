@@ -63,7 +63,6 @@ class _UserIssueListScreenState extends State<UserIssueListScreen> {
         loading = false;
       });
     } catch (e) {
-      debugPrint("Error: $e");
       setState(() => loading = false);
     }
   }
@@ -116,7 +115,7 @@ class _UserIssueListScreenState extends State<UserIssueListScreen> {
                     : BorderSide.none,
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
             child: Column(
               children: [
                 Text(
@@ -146,6 +145,7 @@ class _UserIssueListScreenState extends State<UserIssueListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 56, 75, 112),
@@ -187,57 +187,183 @@ class _UserIssueListScreenState extends State<UserIssueListScreen> {
                               ),
                             ),
                             const Divider(height: 1),
-                            Expanded(
-                              child: ListView.builder(
-                                itemCount: _getFilteredIssues().length,
-                                itemBuilder: (context, index) {
-                                  final issue = _getFilteredIssues()[index];
-                                  return Card(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    elevation: 4,
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(16),
-                                      onTap: () async {
-                                        final updatedIssue =
-                                            await Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder:
-                                                    (_) => IssueDetailsScreen(
-                                                      issue: issue,
-                                                    ),
-                                              ),
-                                            );
-                                        if (updatedIssue != null)
-                                          _fetchIssues();
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(16),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              _shortTitle(
-                                                issue["issue_details"],
-                                              ),
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF384B70),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 6),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
+                            width < 600
+                                ? Expanded(
+                                  child: ListView.builder(
+                                    itemCount: _getFilteredIssues().length,
+                                    itemBuilder: (context, index) {
+                                      final issue = _getFilteredIssues()[index];
+                                      return Card(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        elevation: 4,
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          onTap: () async {
+                                            final updatedIssue =
+                                                await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (_) =>
+                                                            IssueDetailsScreen(
+                                                              issue: issue,
+                                                            ),
+                                                  ),
+                                                );
+                                            if (updatedIssue != null)
+                                              _fetchIssues();
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(16),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
+                                                Text(
+                                                  _shortTitle(
+                                                    issue["issue_details"],
+                                                  ),
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Color(0xFF384B70),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 6),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      "Raised By: ${issue["raised_by"] ?? "N/A"}",
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Text(
+                                                      "Raised: ${issue["issue_raise_date"] ?? "-"}",
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          "Priority: ${issue["priority"] ?? "-"}",
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 14,
+                                                              ),
+                                                        ),
+                                                        Text(
+                                                          "Deadline: ${issue["deadline"] ?? "-"}",
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 14,
+                                                              ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.centerRight,
+                                                      child: _buildStatusChip(
+                                                        issue["gms_status"],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                )
+                                : Expanded(
+                                  child: GridView.builder(
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 2,
+                                          childAspectRatio:
+                                              width < 950 ? 1.6 : 4,
+                                          crossAxisSpacing: 6,
+                                          mainAxisSpacing: 6,
+                                        ),
+                                    itemCount: _getFilteredIssues().length,
+
+                                    itemBuilder: (context, index) {
+                                      final issue = _getFilteredIssues()[index];
+                                      return Card(
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                        ),
+                                        elevation: 4,
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          onTap: () async {
+                                            final updatedIssue =
+                                                await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (_) =>
+                                                            IssueDetailsScreen(
+                                                              issue: issue,
+                                                            ),
+                                                  ),
+                                                );
+                                            if (updatedIssue != null)
+                                              _fetchIssues();
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(16),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  _shortTitle(
+                                                    issue["issue_details"],
+                                                  ),
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Color(0xFF384B70),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 6),
                                                 Text(
                                                   "Raised By: ${issue["raised_by"] ?? "N/A"}",
                                                   style: const TextStyle(
@@ -246,54 +372,55 @@ class _UserIssueListScreenState extends State<UserIssueListScreen> {
                                                 ),
                                                 const SizedBox(width: 10),
                                                 Text(
-                                                  "Raised on: ${issue["issue_raise_date"] ?? "-"}",
+                                                  "Raised: ${issue["issue_raise_date"] ?? "-"}",
                                                   style: const TextStyle(
                                                     fontSize: 14,
                                                   ),
                                                 ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
+                                                const SizedBox(height: 2),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
                                                   children: [
-                                                    Text(
-                                                      "Priority: ${issue["priority"] ?? "-"}",
-                                                      style: const TextStyle(
-                                                        fontSize: 14,
-                                                      ),
+                                                    Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          "Priority: ${issue["priority"] ?? "-"}",
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 14,
+                                                              ),
+                                                        ),
+                                                        Text(
+                                                          "Deadline: ${issue["deadline"] ?? "-"}",
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 14,
+                                                              ),
+                                                        ),
+                                                      ],
                                                     ),
-                                                    Text(
-                                                      "Deadline: ${issue["deadline"] ?? "-"}",
-                                                      style: const TextStyle(
-                                                        fontSize: 14,
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.centerRight,
+                                                      child: _buildStatusChip(
+                                                        issue["gms_status"],
                                                       ),
                                                     ),
                                                   ],
                                                 ),
-                                                Align(
-                                                  alignment:
-                                                      Alignment.centerRight,
-                                                  child: _buildStatusChip(
-                                                    issue["gms_status"],
-                                                  ),
-                                                ),
                                               ],
                                             ),
-                                          ],
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
+                                      );
+                                    },
+                                  ),
+                                ),
                           ],
                         ),
               ),

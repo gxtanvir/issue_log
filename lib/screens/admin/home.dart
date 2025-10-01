@@ -1,5 +1,7 @@
+import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:issue_log/screens/admin/upcoming_deadline.dart';
 import 'package:issue_log/screens/admin/user_issue_list.dart';
 import 'package:issue_log/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,6 +26,8 @@ class AdminSummaryScreen extends StatefulWidget {
 class _AdminSummaryScreenState extends State<AdminSummaryScreen> {
   bool isLoading = true;
   List<dynamic> summaryData = [];
+  List<dynamic> deadlineIssues = [];
+  var selectedDays = 7;
   String adminName = "";
   int selectedYear = DateTime.now().year;
   int selectedMonth = DateTime.now().month;
@@ -52,6 +56,23 @@ class _AdminSummaryScreenState extends State<AdminSummaryScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text("Error loading summary: $e")));
       }
+    }
+  }
+
+  Future<void> _loadDeadlineIssues(int day) async {
+    try {
+      final data = await ApiService.fetchUpcomingDeadlineIssues(day);
+      setState(() {
+        summaryData = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error loading issues: $e")));
     }
   }
 
@@ -129,7 +150,7 @@ class _AdminSummaryScreenState extends State<AdminSummaryScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10),
+          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1400),
             child: RefreshIndicator(
@@ -171,7 +192,6 @@ class _AdminSummaryScreenState extends State<AdminSummaryScreen> {
                             192,
                           ),
                           iconSize: 22,
-                          // elevation: 6.7,
                         ),
                         label: Text("Add Issue"),
                       ),
@@ -217,6 +237,36 @@ class _AdminSummaryScreenState extends State<AdminSummaryScreen> {
                             _loadSummary();
                           }
                         },
+                      ),
+                      const SizedBox(width: 40),
+                      DropdownButton(
+                        items:
+                            [3, 7, 15].map((d) {
+                              return DropdownMenuItem(
+                                value: d,
+                                child: Text("$d Days"),
+                              );
+                            }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedDays = value!;
+                          });
+                          _loadDeadlineIssues(selectedDays);
+                        },
+                      ),
+                      const SizedBox(width: 20),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (ctx) {
+                                return UpcomingDeadlineScreen();
+                              },
+                            ),
+                          );
+                        },
+                        label: Text('Upcoming'),
+                        icon: Icon(Icons.upcoming),
                       ),
                     ],
                   ),

@@ -340,16 +340,6 @@ class _IssueUpdateScreenState extends State<IssueUpdateScreen> {
               if (deadline != null)
                 _buildTextField('CRM', crmController, 1, false),
               const SizedBox(height: 16),
-              // TextFormField(
-              //   controller: crmController,
-              //   decoration: const InputDecoration(labelText: "CRM"),
-              //   validator: (value) {
-              //     if (deadline != null && (value == null || value.isEmpty)) {
-              //       return "CRM is required when deadline is set";
-              //     }
-              //     return null;
-              //   },
-              // ),
 
               // Status
               _buildDropdown("Issue Status", gmsStatus, [

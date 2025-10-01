@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = "http://172.25.12.159:8000/api/";
+  static const String baseUrl = "http://10.128.175.82:8000/api/";
 
   // In-memory
   static String? _token;
@@ -56,14 +56,16 @@ class ApiService {
               (user['is_staff'] == true) || (user['is_superuser'] == true);
 
           final rawCompanies = user['companies'];
-          _companies = rawCompanies is List
-              ? List<String>.from(rawCompanies.map((c) => c.toString()))
-              : [];
+          _companies =
+              rawCompanies is List
+                  ? List<String>.from(rawCompanies.map((c) => c.toString()))
+                  : [];
 
           final rawModules = user['modules'];
-          _modules = rawModules is List
-              ? List<String>.from(rawModules.map((m) => m.toString()))
-              : [];
+          _modules =
+              rawModules is List
+                  ? List<String>.from(rawModules.map((m) => m.toString()))
+                  : [];
 
           // Save prefs
           if (_username != null) await prefs.setString('username', _username!);
@@ -93,6 +95,7 @@ class ApiService {
   static Future<bool> signup(
     String name,
     String userId,
+    String email,
     String password,
     List<int> companyIds,
     List<int> moduleIds,
@@ -105,6 +108,7 @@ class ApiService {
         body: json.encode({
           'name': name,
           'user_id': userId,
+          'email': email,
           'password': password,
           'companies': companyIds,
           'modules': moduleIds,
@@ -131,7 +135,7 @@ class ApiService {
   }
 
   static Future<bool> verifyResetCode(String email, String code) async {
-    final url = Uri.parse("${baseUrl}accounts/password-reset-confirm/");
+    final url = Uri.parse("${baseUrl}accounts/password-verify/");
     final response = await http.post(url, body: {"email": email, "code": code});
     return response.statusCode == 200;
   }
@@ -144,7 +148,7 @@ class ApiService {
     final url = Uri.parse("${baseUrl}accounts/password-reset-confirm/");
     final response = await http.post(
       url,
-      body: {"email": email, "code": code, "password": password},
+      body: {"email": email, "code": code, "new_password": password},
     );
     return response.statusCode == 200;
   }
@@ -278,6 +282,23 @@ class ApiService {
     throw Exception("Failed to fetch issues for user: ${res.body}");
   }
 
+  // Upcoming Deadline Issues
+static Future<List<dynamic>> fetchUpcomingDeadlineIssues(int days) async {
+  final token = await ApiService.getToken();
+  if (token == null) throw Exception("Token not found");
+
+  final response = await http.get(
+    Uri.parse("${ApiService.baseUrl}issues/upcoming_deadline_issues/?days=$days"),
+    headers: {"Authorization": "Bearer $token"},
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception("Failed to load upcoming issues: ${response.body}");
+  }
+}
+
   // ---------------- NOTIFICATIONS -----------------
   static Future<List<dynamic>> getUserNotifications() async {
     final res = await _getWithAuth("notifications/");
@@ -306,14 +327,13 @@ class ApiService {
     final token = await getToken();
     if (token == null) throw Exception("Token not found");
     final url = Uri.parse("$baseUrl$endpoint");
-    return await http.get(
-      url,
-      headers: {"Authorization": "Bearer $token"},
-    );
+    return await http.get(url, headers: {"Authorization": "Bearer $token"});
   }
 
   static Future<http.Response> _postWithAuth(
-      String endpoint, Map<String, dynamic> body) async {
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
     final token = await getToken();
     if (token == null) throw Exception("Token not found");
     final url = Uri.parse("$baseUrl$endpoint");

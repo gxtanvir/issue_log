@@ -189,6 +189,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
     final userCompanies = ApiService.companies ?? [];
     final userModules = ApiService.modules ?? [];
 
@@ -206,23 +207,43 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Issue Date + Company
-              Row(
-                children: [
-                  _buildDatePickerWidget(
-                    "Issue Raise Date",
-                    issueRaiseDate,
-                    (d) => setState(() => issueRaiseDate = d),
-                    readOnly: true,
-                  ),
-                  const SizedBox(width: 12),
-                  _buildDropdown(
-                    "Company Name",
-                    companyName,
-                    userCompanies,
-                    (val) => setState(() => companyName = val),
-                  ),
-                ],
-              ),
+              if (width < 600)
+                Row(
+                  children: [
+                    _buildDatePickerWidget(
+                      "Issue Raise Date",
+                      issueRaiseDate,
+                      (d) => setState(() => issueRaiseDate = d),
+                      readOnly: true,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildDropdown(
+                      "Company Name",
+                      companyName,
+                      userCompanies,
+                      (val) => setState(() => companyName = val),
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    _buildDatePickerWidget(
+                      "Issue Raise Date",
+                      issueRaiseDate,
+                      (d) => setState(() => issueRaiseDate = d),
+                      readOnly: true,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildDropdown(
+                      "Company Name",
+                      companyName,
+                      userCompanies,
+                      (val) => setState(() => companyName = val),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                ),
               const SizedBox(height: 16),
 
               // Priority + Module

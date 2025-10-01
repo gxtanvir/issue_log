@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:issue_log/screens/home/issue_update.dart';
+import 'package:issue_log/services/api_service.dart';
 
 class IssueDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> issue;
@@ -52,11 +53,7 @@ class _IssueDetailsScreenState extends State<IssueDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Issue Details"),
-        foregroundColor: Colors.white,
-        backgroundColor: const Color.fromARGB(255, 56, 75, 112),
-      ),
+      appBar: AppBar(title: const Text("Issue Details")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -75,7 +72,8 @@ class _IssueDetailsScreenState extends State<IssueDetailsScreen> {
             row("CRM", issue['crm'] ?? "-"),
             row("Comment", issue['comments'] ?? "-"),
             const SizedBox(height: 30),
-            if (issue['gms_status'] == "Pending")
+            if (issue['gms_status'] == "Pending" &&
+                ApiService.name == issue['inserted_by_name'])
               ElevatedButton(
                 onPressed: () async {
                   final updatedIssue = await Navigator.of(
