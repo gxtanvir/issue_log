@@ -238,22 +238,6 @@ class _AdminSummaryScreenState extends State<AdminSummaryScreen> {
                           }
                         },
                       ),
-                      const SizedBox(width: 40),
-                      DropdownButton(
-                        items:
-                            [3, 7, 15].map((d) {
-                              return DropdownMenuItem(
-                                value: d,
-                                child: Text("$d Days"),
-                              );
-                            }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedDays = value!;
-                          });
-                          _loadDeadlineIssues(selectedDays);
-                        },
-                      ),
                       const SizedBox(width: 20),
                       OutlinedButton.icon(
                         onPressed: () {

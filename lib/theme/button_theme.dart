@@ -8,5 +8,6 @@ ElevatedButtonThemeData elevatedButtonTheme = ElevatedButtonThemeData(
     foregroundColor: Colors.white,
     textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    
   ),
 );

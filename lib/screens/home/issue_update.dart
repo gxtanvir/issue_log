@@ -157,6 +157,13 @@ class _IssueUpdateScreenState extends State<IssueUpdateScreen> {
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
+        validator: (value) {
+          if ((label != "Comments") &&
+              (value == null || value.trim().isEmpty)) {
+            return "Required";
+          }
+          return null;
+        },
       ),
     );
   }

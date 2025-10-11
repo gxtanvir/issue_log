@@ -20,7 +20,10 @@ class _NotificationIconState extends State<NotificationIcon>
     WidgetsBinding.instance.addObserver(this);
     _refreshCount();
     // poll every 20s (adjust if you like)
-    _timer = Timer.periodic(const Duration(hours: 10), (_) => _refreshCount());
+    _timer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => _refreshCount(),
+    );
   }
 
   @override

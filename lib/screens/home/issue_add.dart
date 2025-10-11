@@ -19,6 +19,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
   final TextEditingController raisedByCtrl = TextEditingController();
   final TextEditingController issueDetailsCtrl = TextEditingController();
   final TextEditingController responsiblePersonCtrl = TextEditingController();
+  final TextEditingController crmCtrl = TextEditingController();
   final TextEditingController commentsCtrl = TextEditingController();
 
   // Dropdown values
@@ -27,6 +28,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
   String? module;
   String? via;
   String? responsibleParty = 'Logic';
+  String? crm;
   String? gmsStatus = 'Pending';
 
   // Dates
@@ -39,12 +41,13 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
   Future<void> _pickDate(
     Function(DateTime?) onDatePicked, {
     DateTime? initialDate,
+    DateTime? lastDate,
   }) async {
     final picked = await showDatePicker(
       context: context,
       initialDate: initialDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
+      firstDate: DateTime(2024),
+      lastDate: lastDate!,
     );
 
     setState(() {
@@ -71,6 +74,7 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
       "gms_status": gmsStatus,
       "deadline": _fmtDate(deadline),
       "complete_date": _fmtDate(completeDate),
+      "crm": crmCtrl.text.trim(),
       "comments":
           commentsCtrl.text.trim().isNotEmpty ? commentsCtrl.text.trim() : null,
       "inserted_by": ApiService.username ?? "",
@@ -329,7 +333,9 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-
+              // CRM is required if deadline is set
+              if (deadline != null) _buildTextField("CRM", crmCtrl, 1),
+              const SizedBox(height: 16),
               // Status
               _buildDropdown("Issue Status", gmsStatus, [
                 "Pending",

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = "http://10.128.175.82:8000/api/";
+  static const String baseUrl = "http://172.25.10.150:8000/api/";
 
   // In-memory
   static String? _token;
@@ -283,21 +283,23 @@ class ApiService {
   }
 
   // Upcoming Deadline Issues
-static Future<List<dynamic>> fetchUpcomingDeadlineIssues(int days) async {
-  final token = await ApiService.getToken();
-  if (token == null) throw Exception("Token not found");
+  static Future<List<dynamic>> fetchUpcomingDeadlineIssues(int days) async {
+    final token = await ApiService.getToken();
+    if (token == null) throw Exception("Token not found");
 
-  final response = await http.get(
-    Uri.parse("${ApiService.baseUrl}issues/upcoming_deadline_issues/?days=$days"),
-    headers: {"Authorization": "Bearer $token"},
-  );
+    final response = await http.get(
+      Uri.parse(
+        "${ApiService.baseUrl}issues/upcoming_deadline_issues/?days=$days",
+      ),
+      headers: {"Authorization": "Bearer $token"},
+    );
 
-  if (response.statusCode == 200) {
-    return jsonDecode(response.body);
-  } else {
-    throw Exception("Failed to load upcoming issues: ${response.body}");
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception("Failed to load upcoming issues: ${response.body}");
+    }
   }
-}
 
   // ---------------- NOTIFICATIONS -----------------
   static Future<List<dynamic>> getUserNotifications() async {
