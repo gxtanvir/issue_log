@@ -5,7 +5,11 @@ import 'login.dart';
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
   final String code;
-  const ResetPasswordScreen({super.key, required this.email, required this.code});
+  const ResetPasswordScreen({
+    super.key,
+    required this.email,
+    required this.code,
+  });
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -21,8 +25,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     _formKey.currentState!.save();
 
     setState(() => _loading = true);
-    bool success =
-        await ApiService.resetPassword(widget.email, widget.code, _password);
+    bool success = await ApiService.resetPassword(
+      widget.email,
+      widget.code,
+      _password,
+    );
     setState(() => _loading = false);
 
     if (success) {
@@ -35,9 +42,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         (route) => false,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to reset password")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Failed to reset password")));
     }
   }
 
@@ -45,32 +52,48 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Reset Password")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const Text("Enter your new password"),
-            const SizedBox(height: 20),
-            Form(
-              key: _formKey,
-              child: TextFormField(
-                obscureText: true,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: "New Password",
-                ),
-                validator: (val) =>
-                    val != null && val.length >= 6 ? null : "At least 6 characters",
-                onSaved: (val) => _password = val!,
-              ),
+      body: LayoutBuilder(
+        builder: (context, constrains) {
+          final isWidth = constrains.maxHeight >= 600;
+          final maxWidth = isWidth ? 500.0 : double.infinity;
+          return ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: maxWidth,
             ),
-            const SizedBox(height: 20),
-            _loading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _submit, child: const Text("Reset Password")),
-          ],
-        ),
+            child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    const Text("Enter your new password"),
+                    const SizedBox(height: 20),
+                    Form(
+                      key: _formKey,
+                      child: TextFormField(
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: "New Password",
+                        ),
+                        validator:
+                            (val) =>
+                                val != null && val.length >= 6
+                                    ? null
+                                    : "At least 6 characters",
+                        onSaved: (val) => _password = val!,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _loading
+                        ? const CircularProgressIndicator()
+                        : ElevatedButton(
+                          onPressed: _submit,
+                          child: const Text("Reset Password"),
+                        ),
+                  ],
+                ),
+              ),
+          );
+        },
       ),
     );
   }
