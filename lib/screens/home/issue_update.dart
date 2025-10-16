@@ -361,17 +361,10 @@ class _IssueUpdateScreenState extends State<IssueUpdateScreen> {
 
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 56, 75, 112),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 14,
-                  ),
+                  minimumSize: Size.fromHeight(50),
                 ),
                 onPressed: _updateIssue,
-                child: const Text("Update", style: TextStyle(fontSize: 18)),
+                child: const Text("Update"),
               ),
             ],
           ),

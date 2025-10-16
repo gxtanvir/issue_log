@@ -41,13 +41,12 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
   Future<void> _pickDate(
     Function(DateTime?) onDatePicked, {
     DateTime? initialDate,
-    DateTime? lastDate,
   }) async {
     final picked = await showDatePicker(
       context: context,
       initialDate: initialDate ?? DateTime.now(),
       firstDate: DateTime(2024),
-      lastDate: lastDate!,
+      lastDate: DateTime(22026),
     );
 
     setState(() {
@@ -349,17 +348,10 @@ class _IssueAddScreenState extends State<IssueAddScreen> {
 
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 56, 75, 112),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 14,
-                  ),
+                  minimumSize: Size.fromHeight(50),
                 ),
                 onPressed: _saveIssue,
-                child: const Text("Save", style: TextStyle(fontSize: 18)),
+                child: const Text("Save"),
               ),
             ],
           ),

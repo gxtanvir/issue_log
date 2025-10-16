@@ -201,6 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         TextButton(
           onPressed: () {
+            Navigator.pop(context);
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const SignupScreen()),

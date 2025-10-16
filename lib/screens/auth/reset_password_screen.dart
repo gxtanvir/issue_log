@@ -56,22 +56,30 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         builder: (context, constrains) {
           final isWidth = constrains.maxHeight >= 600;
           final maxWidth = isWidth ? 500.0 : double.infinity;
-          return ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: maxWidth,
-            ),
+          return Center(
             child: Padding(
-                padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
                 child: Column(
                   children: [
-                    const Text("Enter your new password"),
+                    const Text(
+                      'Enter your new password',
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 56, 75, 112),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     Form(
                       key: _formKey,
                       child: TextFormField(
                         obscureText: true,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           labelText: "New Password",
                         ),
                         validator:
@@ -86,12 +94,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     _loading
                         ? const CircularProgressIndicator()
                         : ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: Size.fromHeight(50),
+                          ),
                           onPressed: _submit,
                           child: const Text("Reset Password"),
                         ),
                   ],
                 ),
               ),
+            ),
           );
         },
       ),

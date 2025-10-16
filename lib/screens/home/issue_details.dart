@@ -103,7 +103,7 @@ class _IssueDetailsScreenState extends State<IssueDetailsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
+                    horizontal: 90,
                     vertical: 14,
                   ),
                 ),
